@@ -3,6 +3,7 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const crypto = require("crypto");
 const cookieParser = require('cookie-parser');
+const cors = require('cors');
 const app = express();
 const client = require('twilio')(process.env.accountSid, process.env.authToken);
 
@@ -10,6 +11,7 @@ const port  =  process.env.PORT ||  5000
 // Middleware to parse JSON bodies
 app.use(express.json());
 app.use(cookieParser());
+app.use(cors());
 
 // Generate OTP function
 function generateOTP() {
@@ -31,7 +33,6 @@ function hashOTP(otp) {
 }
 
 // Route for sending OTP
-
 app.get("/",(req,res) => {
 res.status(200).send("testing")
 })
