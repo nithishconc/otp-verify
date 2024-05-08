@@ -11,5 +11,5 @@ app.get("/sendotp" , (req,res) => {
 })
 
 app.listen(3000, () => {
-    console.log("listening at port number 8000")
+    console.log("listening at port number 3000")
 })
