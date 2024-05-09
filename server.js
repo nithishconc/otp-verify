@@ -12,7 +12,12 @@ const port = process.env.PORT || 5000;
 // Middleware
 app.use(express.json());
 app.use(cookieParser());
-app.use(cors());
+const corsOptions = {
+    origin: 'http://127.0.0.1:5500', // Allow requests from your frontend
+    credentials: true // Allow credentials (cookies) to be sent with requests
+};
+
+app.use(cors(corsOptions));
 
 // Generate OTP function
 function generateOTP() {
