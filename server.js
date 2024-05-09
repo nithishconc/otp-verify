@@ -38,9 +38,7 @@ app.post("/send-otp", (req, res) => {
     const otp = generateOTP();
     const hashedOTP = hashOTP(otp);
     const phoneNumber = req.body.to;
-
     res.cookie('otp_' + phoneNumber, hashedOTP, { httpOnly: true, maxAge: 30 * 60 * 1000 });
-
     client.messages
         .create({
             body: `Your OTP is: ${otp}`,
