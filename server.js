@@ -94,9 +94,7 @@ const corsOptions = {
     origin: 'https://decarb-98f67d-1bd25872d802028e49e0a37d4.webflow.io', // Allow requests from your frontend
     credentials: true // Allow credentials (cookies) to be sent with requests
 };
-
 app.use(cors(corsOptions));
-
 // Generate OTP function
 function generateOTP() {
     const digits = '0123456789';
@@ -106,7 +104,6 @@ function generateOTP() {
     }
     return OTP;
 }
-
 // Hash function for storing OTPs securely
 function hashOTP(otp) {
     const secret = process.env.secretKey;
@@ -115,10 +112,8 @@ function hashOTP(otp) {
                      .digest('hex');
     return hash;
 }
-
 // Store OTP in memory (for demonstration purposes)
 const otpMap = new Map();
-
 // Route for sending OTP
 app.post("/send-otp", (req, res) => {
     const otp = generateOTP();
@@ -147,16 +142,43 @@ app.post("/verify-otp", (req, res) => {
     const phoneNumber = req.body.to;
     const storedOTP = otpMap.get(phoneNumber); // Retrieve hashed OTP from memory
     if (!storedOTP) {
-        return res.status(400).json({ success: false, message: "No OTP found for the given phone number." });
+        return res.status(200).json({ success: false, message: "No OTP found for the given phone number." });
     }
     const hashedEnteredOTP = hashOTP(enteredOTP);
     if (hashedEnteredOTP === storedOTP) {
         otpMap.delete(phoneNumber); // Remove OTP from memory after successful verification
         res.status(200).json({ success: true, message: "OTP verified successfully." });
     } else {
-        res.status(400).json({ success: false, message: "Invalid OTP. Please try again." });
+        res.status(200).json({ success: false, message: "Invalid OTP. Please try again." });
     }
 });
+
+
+// Route for resending OTP
+app.post("/resend-otp", (req, res) => {
+    const phoneNumber = req.body.to;
+    const storedOTP = otpMap.get(phoneNumber); 
+    
+    if (!storedOTP) {
+        return res.status(200).json({ success: false, message: "No OTP found for the given phone number." });
+    }
+    
+    client.messages
+        .create({
+            body: `Your OTP is: ${storedOTP}`,
+            to: phoneNumber,
+            from: process.env.from,
+        })
+        .then((message) => {
+            console.log(`OTP resent successfully SID: ${message.sid}`);
+            res.status(200).json({ success: true, message: "OTP resent successfully." });
+        })
+        .catch((error) => {
+            console.error('Error resending OTP:', error);
+            res.status(500).json({ success: false, error: "Failed to resend OTP." });
+        });
+});
+
 
 // Error handling middleware
 app.use((err, req, res, next) => {
