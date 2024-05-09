@@ -1,4 +1,4 @@
-require("dotenv").config()
+require("dotenv").config();
 const express = require("express");
 const bodyParser = require("body-parser");
 const crypto = require("crypto");
@@ -7,8 +7,9 @@ const cors = require('cors');
 const app = express();
 const client = require('twilio')(process.env.accountSid, process.env.authToken);
 
-const port  =  process.env.PORT ||  5000
-// Middleware to parse JSON bodies
+const port = process.env.PORT || 5000;
+
+// Middleware
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors());
@@ -25,7 +26,7 @@ function generateOTP() {
 
 // Hash function for storing OTPs securely
 function hashOTP(otp) {
-    const secret = process.env.secretKey; // Your secret key from environment variables
+    const secret = process.env.secretKey;
     const hash = crypto.createHmac('sha256', secret)
                      .update(otp)
                      .digest('hex');
@@ -33,22 +34,18 @@ function hashOTP(otp) {
 }
 
 // Route for sending OTP
-app.get("/",(req,res) => {
-res.status(200).send("testing")
-})
-
 app.post("/send-otp", (req, res) => {
     const otp = generateOTP();
     const hashedOTP = hashOTP(otp);
-    const phoneNumber = req.body.to; // Assuming phone number is sent in the request body
-    // Store hashed OTP securely in cookie
+    const phoneNumber = req.body.to;
+
     res.cookie('otp_' + phoneNumber, hashedOTP, { httpOnly: true, maxAge: 30 * 60 * 1000 });
-    // Send OTP via Twilio
+
     client.messages
         .create({
             body: `Your OTP is: ${otp}`,
             to: phoneNumber,
-            from: process.env.from, // Use your Twilio phone number
+            from: process.env.from,
         })
         .then((message) => {
             console.log(`OTP sent successfully SID: ${message.sid}`);
@@ -61,24 +58,32 @@ app.post("/send-otp", (req, res) => {
 });
 
 // Route for verifying OTP
-app.get("/verify-otp", (req, res) => {
+app.post("/verify-otp", (req, res) => {
     // const enteredOTP = req.body.otp;
-    // const phoneNumber = req.body.to; // Assuming phone number is sent in the request body
+    // const phoneNumber = req.body.to;
     // const storedOTP = req.cookies['otp_' + phoneNumber];
+
     // if (!storedOTP) {
     //     return res.status(400).json({ success: false, message: "No OTP found for the given phone number." });
     // }
+
     // const hashedEnteredOTP = hashOTP(enteredOTP);
+
     // if (hashedEnteredOTP === storedOTP) {
-    //     // Clear the OTP after successful verification
     //     res.clearCookie('otp_' + phoneNumber);
     //     res.status(200).json({ success: true, message: "OTP verified successfully." });
     // } else {
-    //     res.status(400).json({ success: false, message: "Invalid OTP. Please try again!!!!." });
+    //     res.status(400).json({ success: false, message: "Invalid OTP. Please try again." });
     // }
-    res.send("verify-otp")
+    res.status(200).send("verify code!")
 });
 
-app.listen( port, () => {
-    console.log("Server running at http://localhost:8080!");
+// Error handling middleware
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(500).send('Something broke!');
+});
+
+app.listen(port, () => {
+    console.log(`Server running at http://localhost:${port}`);
 });
