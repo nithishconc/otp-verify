@@ -61,24 +61,22 @@ app.post("/send-otp", (req, res) => {
 });
 
 // Route for verifying OTP
-app.post("/verify-otp", (req, res) => {
-    const enteredOTP = req.body.otp;
-    const phoneNumber = req.body.to; // Assuming phone number is sent in the request body
-    const storedOTP = req.cookies['otp_' + phoneNumber];
-
-    if (!storedOTP) {
-        return res.status(400).json({ success: false, message: "No OTP found for the given phone number." });
-    }
-
-    const hashedEnteredOTP = hashOTP(enteredOTP);
-
-    if (hashedEnteredOTP === storedOTP) {
-        // Clear the OTP after successful verification
-        res.clearCookie('otp_' + phoneNumber);
-        res.status(200).json({ success: true, message: "OTP verified successfully." });
-    } else {
-        res.status(400).json({ success: false, message: "Invalid OTP. Please try again!!!!." });
-    }
+app.get("/verify-otp", (req, res) => {
+    // const enteredOTP = req.body.otp;
+    // const phoneNumber = req.body.to; // Assuming phone number is sent in the request body
+    // const storedOTP = req.cookies['otp_' + phoneNumber];
+    // if (!storedOTP) {
+    //     return res.status(400).json({ success: false, message: "No OTP found for the given phone number." });
+    // }
+    // const hashedEnteredOTP = hashOTP(enteredOTP);
+    // if (hashedEnteredOTP === storedOTP) {
+    //     // Clear the OTP after successful verification
+    //     res.clearCookie('otp_' + phoneNumber);
+    //     res.status(200).json({ success: true, message: "OTP verified successfully." });
+    // } else {
+    //     res.status(400).json({ success: false, message: "Invalid OTP. Please try again!!!!." });
+    // }
+    res.send("verify-otp")
 });
 
 app.listen( port, () => {
