@@ -160,7 +160,7 @@ app.post("/verify-otp", (req, res) => {
 });
 
 // Route for resending OTP
-const resendInterval = 30 * 1000; // Resend interval in milliseconds
+const resendInterval = 15 * 1000; // Resend interval in milliseconds
 
 app.post("/resend-otp", (req, res) => {
     const phoneNumber = req.body.to;
