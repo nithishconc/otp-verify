@@ -77,6 +77,7 @@
 // app.listen(port, () => {
 //     console.log(`Server running at http://localhost:${port}`);
 // });
+
 require("dotenv").config();
 const express = require("express");
 const bodyParser = require("body-parser");
@@ -90,7 +91,7 @@ const port = process.env.PORT || 5000;
 // Middleware
 app.use(express.json());
 const corsOptions = {
-    origin: 'http://decarb-98f67d-1bd25872d802028e49e0a37d4.webflow.io', // Allow requests from your frontend
+    origin: 'https://decarb-98f67d-1bd25872d802028e49e0a37d4.webflow.io/forms', // Allow requests from your frontend
     credentials: true // Allow credentials (cookies) to be sent with requests
 };
 app.use(cors(corsOptions));
