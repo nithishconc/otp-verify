@@ -1,19 +1,22 @@
 require("dotenv").config();
 const express = require("express");
 const bodyParser = require("body-parser");
+const nodemailer = require("nodemailer");
+
+const sgMail = require("@sendgrid/mail");
 const crypto = require("crypto");
 const cors = require('cors');
 const app = express();
 const client = require('twilio')(process.env.accountSid, process.env.authToken);
-const port = process.env.PORT || 5000;
-
+const PORT = process.env.PORT || 5000;
 // Middleware
 app.use(express.json());
 const corsOptions = {
-    // origin: 'https://decarb-98f67d-1bd25872d802028e49e0a37d4.webflow.io', // Allow requests from your frontend
+    origin: 'https://decarb-98f67d-1bd25872d802028e49e0a37d4.webflow.io', // Allow requests from your frontend
     credentials: true // Allow credentials (cookies) to be sent with requests
 };
 app.use(cors(corsOptions));
+app.use(bodyParser.urlencoded({ extended: true }));
 
 // Store OTPs and last sent times
 const otpMap = new Map();
@@ -74,12 +77,12 @@ app.post("/verify-otp", (req, res) => {
         otpMap.delete(phoneNumber); // Remove OTP from memory after successful verification
         res.status(200).json({ success: true, message: "OTP verified successfully." });
     } else {
-        res.status(200).json({ success: false, message: "Invalid OTP. Please try again." });
+        res.status(400).json({ success: false, message: "Invalid OTP. Please try again." });
     }
 });
 
 // Route for resending OTP
-const resendInterval = 15 * 1000; // Resend interval in milliseconds
+const resendInterval = 15 * 1000; // Resend interval idn milliseconds
 
 app.post("/resend-otp", (req, res) => {
     const phoneNumber = req.body.to;
@@ -90,7 +93,7 @@ app.post("/resend-otp", (req, res) => {
     // Check if OTP was recently sent within the last 30 seconds
     if (timeDifference < resendInterval) {
         const timeRemaining = Math.ceil((resendInterval - timeDifference) / 1000);
-        return res.status(429).json({ success: false, message: `You can resend OTP after ${timeRemaining} seconds.` });
+        return res.status(429).json({ success: false, message: `You can resend OTP after ${timeRemaining} seconds!` });
     }
 
     // Generate OTP
@@ -117,12 +120,49 @@ app.post("/resend-otp", (req, res) => {
         });
 });
 
+app.post("/email-otp", (req, res) => {
+    const { email } = req.body;
+
+    // Check if OTP was recently sent within the last 30 seconds
+    const currentTime = Date.now();
+    const lastSentTime = lastSentTimes[email] || 0;
+    const timeDifference = currentTime - lastSentTime;
+    if (timeDifference < 30 * 1000) { // 30 seconds in milliseconds
+        const timeRemaining = Math.ceil((30 * 1000 - timeDifference) / 1000); // Convert remaining time to seconds
+        return res.status(429).json({ success: false, message: `You can resend OTP after ${timeRemaining} seconds.` });
+    }
+
+    const otp = generateOTP(); // Generate OTP
+    const hashedOTP = hashOTP(otp); // Hash OTP
+    
+    const msg = {
+        to: email,
+        from: process.env.SENDGRID_SENDER_EMAIL,
+        subject: 'Your OTP',
+        text: `Your OTP is: ${otp}`
+    };
+    
+    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+    sgMail.send(msg)
+        .then(() => {
+            console.log("Email sent successfully.");
+            otpMap.set(email, hashedOTP); // Store hashed OTP in memory
+            lastSentTimes[email] = currentTime; // Update the last sent time
+            res.status(200).json({ success: true, message: "OTP sent successfully." });
+        })
+        .catch((error) => {
+            console.error('Error sending email:', error);
+            res.status(500).json({ success: false, error: "Failed to send OTP." });
+        });
+});
+
+
 // Error handling middleware
 app.use((err, req, res, next) => {
     console.error(err.stack);
     res.status(500).send('Something broke!');
 });
 
-app.listen(port, () => {
-    console.log(`Server running at http://localhost:${port}`);
+app.listen(PORT, () => {
+    console.log(`Server running at ${PORT}`);
 });
