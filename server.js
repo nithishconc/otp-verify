@@ -1,8 +1,6 @@
 require("dotenv").config();
 const express = require("express");
 const bodyParser = require("body-parser");
-const nodemailer = require("nodemailer");
-
 const sgMail = require("@sendgrid/mail");
 const crypto = require("crypto");
 const cors = require('cors');
